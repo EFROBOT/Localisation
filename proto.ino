@@ -45,10 +45,10 @@ int calcul_steps(float distance){
     * Rotate the motor a given number of degrees (1-360).
 */
 void sync_4_driver(long steps1, long steps2, long steps3, long steps4){
-    step_1.move(steps1);
-    step_2.move(steps2);
-    step_3.move(steps3);
-    step_4.move(steps4);
+    step_1.startmove(steps1);
+    step_2.startmove(steps2);
+    step_3.startmove(steps3);
+    step_4.startmove(steps4);
 
     while(step_1.getStepsRemaining() || step_2.getStepsRemaining() || step_3.getStepsRemaining() || step_4.getStepsRemaining()){
         step_1.nextAction();
