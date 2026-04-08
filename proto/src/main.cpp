@@ -3,19 +3,24 @@
 #include "MultiDriver.h"
 
 // robot 
-const float L = ;          // distance centre - axe 
-const float LAMBDA = ;     // largeur centre - axe
-const float R = ;          // rayon des roues
+const float L = 0.15 ;          // distance centre - axe 
+const float LAMBDA = 0.15 ;     // largeur centre - axe
+const float R = 0.024;          // rayon des roues
 
 // Nema 14 
-const int STEPS_PER_REV = 200;   // 360 / 1.8 
+const int STEPS_PER_REV = 200; 
 const int MICROSTEPPING = 16;    // A4988
 const float NB_PAS_PAR_METRE = (STEPS_PER_REV * MICROSTEPPING) / (2 * PI * R);
 
-A4988 step_1(STEPS_PER_REV, , ); // haut gauche
-A4988 step_2(STEPS_PER_REV, , ); // haut droite
-A4988 step_3(STEPS_PER_REV, , ); // bas gauche
-A4988 step_4(STEPS_PER_REV, , ); // bas droite
+// Position initial 
+float pos_x = 0.0;
+float pos_y = 0.0;
+float angle = 0.0;
+
+A4988 step_1(STEPS_PER_REV, D2, D3); // haut gauche
+A4988 step_2(STEPS_PER_REV, D6, D7); // haut droite
+A4988 step_3(STEPS_PER_REV, D8, D9); // bas gauche
+A4988 step_4(STEPS_PER_REV, D10, D11); // bas droite
 
 
 void setup(){
@@ -35,6 +40,16 @@ void setup(){
     step_4.setSpeedProfile(step_4.LINEAR_SPEED, 1000, 1000);
 }
 
+void print_position(){
+    Serial.print(pos_x, 4);
+    Serial.print(",");
+    Serial.print(pos_y, 4);
+    Serial.print(",");
+    Serial.println(angle, 4);
+}
+
+
+
 int calcul_steps(float distance){
     long steps = distance * NB_PAS_PAR_METRE;
     return steps;
@@ -45,10 +60,10 @@ int calcul_steps(float distance){
     * Rotate the motor a given number of degrees (1-360).
 */
 void sync_4_driver(long steps1, long steps2, long steps3, long steps4){
-    step_1.startmove(steps1);
-    step_2.startmove(steps2);
-    step_3.startmove(steps3);
-    step_4.startmove(steps4);
+    step_1.startMove(steps1);
+    step_2.startMove(steps2);
+    step_3.startMove(steps3);
+    step_4.startMove(steps4);
 
     while(step_1.getStepsRemaining() || step_2.getStepsRemaining() || step_3.getStepsRemaining() || step_4.getStepsRemaining()){
         step_1.nextAction();
@@ -62,21 +77,34 @@ void sync_4_driver(long steps1, long steps2, long steps3, long steps4){
 void avancer(float distance){
     long steps = calcul_steps(distance);
     sync_4_driver(steps, steps, steps, steps);
+    pos_x += distance * cos(angle);
+    pos_y += distance * sin(angle);
+    print_position();
+
 }
 
 void reculer(float distance){
     long steps = calcul_steps(distance);
     sync_4_driver(-steps, -steps, -steps, -steps);
+    pos_x -= distance * cos(angle);
+    pos_y -= distance * sin(angle);
+    print_position();
 }
 
 void gauche(float distance){
     long steps = calcul_steps(distance);
     sync_4_driver(-steps, steps, steps, -steps);
+    pos_x -= distance * sin(angle); 
+    pos_y += distance * cos(angle);
+    print_position();
 }
 
 void droite(float distance){
     long steps = calcul_steps(distance);
     sync_4_driver(steps, -steps, -steps, steps);
+    pos_x += distance * sin(angle);
+    pos_y -= distance * cos(angle);
+    print_position();
 }
 
 void loop() {
