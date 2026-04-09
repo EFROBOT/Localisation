@@ -5,7 +5,7 @@
 // robot 
 const float L = 0.0115;        // distance centre - axe 
 const float LAMBDA = 0.0115;   // largeur centre - axe
-const float R = 0.024;          // rayon des roues
+const float R = 0.024;         // rayon des roues
 
 // Nema 14 
 const int STEPS_PER_REV = 200; 
@@ -13,9 +13,9 @@ const int MICROSTEPPING = 16;    // A4988
 const float NB_PAS_PAR_METRE = (STEPS_PER_REV * MICROSTEPPING) / (2 * PI * R);
 
 // Position initial 
-float pos_x = 0.0;
-float pos_y = 0.0;
-float angle = 0.0;
+float x_robot = 0.0;
+float y_robot = 0.0;
+float angle_robot = 0.0;
 
 A4988 step_1(STEPS_PER_REV, D2, D3); // haut gauche
 A4988 step_2(STEPS_PER_REV, D6, D7); // haut droite
@@ -68,34 +68,34 @@ void sync_4_driver(long steps1, long steps2, long steps3, long steps4){
 void avancer(float distance){
     long steps = calcul_steps(distance);
     sync_4_driver(steps, -steps, steps, -steps);
-    pos_x += distance * cos(angle);
-    pos_y += distance * sin(angle);
+    x_robot += distance * cos(angle_robot);
+    y_robot += distance * sin(angle_robot);
 }
 
 void reculer(float distance){
     long steps = calcul_steps(distance);
     sync_4_driver(-steps, steps, -steps, steps);
-    pos_x -= distance * cos(angle);
-    pos_y -= distance * sin(angle);
+    x_robot -= distance * cos(angle_robot);
+    y_robot -= distance * sin(angle_robot);
 }
 
 void gauche(float distance){
     long steps = calcul_steps(distance);
     sync_4_driver(-steps, -steps, steps, steps);
-    pos_x -= distance * sin(angle); 
-    pos_y += distance * cos(angle);
+    x_robot -= distance * sin(angle_robot); 
+    y_robot += distance * cos(angle_robot);
 }
 
 void droite(float distance){
     long steps = calcul_steps(distance);
     sync_4_driver(steps, steps, -steps, -steps);
-    pos_x += distance * sin(angle);
-    pos_y -= distance * cos(angle);
+    x_robot += distance * sin(angle_robot);
+    y_robot -= distance * cos(angle_robot);
 }
 
 void rotation_droite(float angle){
     float arc = (angle / 360.0) * 2 * PI * R;
-    long steps = calcul_steps(angle);
+    long steps = calcul_steps(arc);
     sync_4_driver(steps, steps, steps, steps);
 }
 
@@ -103,6 +103,34 @@ void rotation_gauche(float angle){
     float arc = (angle / 360.0) * 2 * PI * R;
     long steps = calcul_steps(arc);
     sync_4_driver(-steps, -steps, -steps, -steps);
+}
+
+void go_to_coord(float x, float y){
+
+    // difference 
+    float dx = x - x_robot;
+    float dy = y - y_robot;
+    float angle_cible = atan2(dy, dx);
+    float dangle = angle_cible - angle_robot;
+
+    // turn to the cible 
+    float arc = (dangle / 360.0) * 2 * PI * R;
+    long steps_for_rotate = calcul_steps(arc);
+    if (dangle > 0.01) {
+        sync_4_driver(-steps_for_rotate, -steps_for_rotate, -steps_for_rotate, -steps_for_rotate);
+    } else if (dangle < -0.01) {
+        sync_4_driver(steps_for_rotate, steps_for_rotate, steps_for_rotate, steps_for_rotate);
+    }
+
+    // move to cible 
+    float distance = sqrt(dx * dx + dy * dy);
+    long steps_for_move = calcul_steps(distance);
+    sync_4_driver(steps_for_move, -steps_for_move, steps_for_move, -steps_for_move);
+
+    //update robot coord 
+    x_robot = x;
+    y_robot = y;
+    angle_robot = angle_cible;
 }
 
 void loop() {
@@ -118,3 +146,32 @@ void loop() {
     droite(0.5);
     delay(600);
 }
+
+/*
+void loop() {
+    if (Serial.available() > 0) {
+        char commande = Serial.read();
+
+        switch (commande) {
+            case 'z':
+                avancer(0.1); 
+                break;
+            case 's':
+                reculer(0.1);
+                break;
+            case 'q':
+                gauche(0.1);
+                break;
+            case 'd':
+                droite(0.1);
+                break;
+            case 'a':
+                rotation_gauche(90.0);
+                break;
+            case 'e': 
+                rotation_droite(90.0);
+                break;
+        }
+    }
+}
+*/
