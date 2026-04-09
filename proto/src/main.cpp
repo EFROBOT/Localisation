@@ -3,8 +3,8 @@
 #include "MultiDriver.h"
 
 // robot 
-const float L = 0.15 ;          // distance centre - axe 
-const float LAMBDA = 0.15 ;     // largeur centre - axe
+const float L = 0.0115;        // distance centre - axe 
+const float LAMBDA = 0.0115;   // largeur centre - axe
 const float R = 0.024;          // rayon des roues
 
 // Nema 14 
@@ -40,15 +40,6 @@ void setup(){
     step_4.setSpeedProfile(step_4.LINEAR_SPEED, 1000, 1000);
 }
 
-void print_position(){
-    Serial.print(pos_x, 4);
-    Serial.print(",");
-    Serial.print(pos_y, 4);
-    Serial.print(",");
-    Serial.println(angle, 4);
-}
-
-
 
 int calcul_steps(float distance){
     long steps = distance * NB_PAS_PAR_METRE;
@@ -76,48 +67,54 @@ void sync_4_driver(long steps1, long steps2, long steps3, long steps4){
 
 void avancer(float distance){
     long steps = calcul_steps(distance);
-    sync_4_driver(steps, steps, steps, steps);
+    sync_4_driver(steps, -steps, steps, -steps);
     pos_x += distance * cos(angle);
     pos_y += distance * sin(angle);
-    print_position();
-
 }
 
 void reculer(float distance){
     long steps = calcul_steps(distance);
-    sync_4_driver(-steps, -steps, -steps, -steps);
+    sync_4_driver(-steps, steps, -steps, steps);
     pos_x -= distance * cos(angle);
     pos_y -= distance * sin(angle);
-    print_position();
 }
 
 void gauche(float distance){
     long steps = calcul_steps(distance);
-    sync_4_driver(-steps, steps, steps, -steps);
+    sync_4_driver(-steps, -steps, steps, steps);
     pos_x -= distance * sin(angle); 
     pos_y += distance * cos(angle);
-    print_position();
 }
 
 void droite(float distance){
     long steps = calcul_steps(distance);
-    sync_4_driver(steps, -steps, -steps, steps);
+    sync_4_driver(steps, steps, -steps, -steps);
     pos_x += distance * sin(angle);
     pos_y -= distance * cos(angle);
-    print_position();
+}
+
+void rotation_droite(float angle){
+    float arc = (angle / 360.0) * 2 * PI * R;
+    long steps = calcul_steps(angle);
+    sync_4_driver(steps, steps, steps, steps);
+}
+
+void rotation_gauche(float angle){
+    float arc = (angle / 360.0) * 2 * PI * R;
+    long steps = calcul_steps(arc);
+    sync_4_driver(-steps, -steps, -steps, -steps);
 }
 
 void loop() {
-
     avancer(1);
-    delay(200);
+    delay(600);
 
     reculer(1);
-    delay(200);
+    delay(600);
 
-    gauche(1);
-    delay(200);
+    gauche(0.5);
+    delay(600);
 
-    droite(1);
-    delay(200);
+    droite(0.5);
+    delay(600);
 }
